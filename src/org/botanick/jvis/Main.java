@@ -16,8 +16,6 @@ import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
-import java.io.File;
-
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
 
@@ -102,7 +100,7 @@ public class Main extends Application {
                 continue;
             }
 
-            renderer.render(property, container);
+            renderer.render(_obj, property, container);
         }
     }
 

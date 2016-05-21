@@ -10,6 +10,10 @@ public class TestClass {
     private int intValue = 42323;
     private long value = 4213L;
     private double dblValue = 32131231.0213712;
+    private String strVlaue = "lalala";
+
+    public int publicMorozoff = -32;
+
     @JsonIgnore
     private int ignoredField = 555;
 

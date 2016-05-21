@@ -10,5 +10,5 @@ import java.lang.reflect.Type;
  */
 public interface DataRenderer {
     boolean applicable(Type _type);
-    void render(BeanPropertyDefinition property, VBox container);
+    void render(Object _instance, BeanPropertyDefinition property, VBox container);
 }
