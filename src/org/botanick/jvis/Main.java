@@ -1,13 +1,16 @@
 package org.botanick.jvis;
 
+import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.botanick.jvis.resources.ResourceDB;
+import org.codehaus.jackson.map.BeanDescription;
+import org.codehaus.jackson.map.BeanPropertyDefinition;
 
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
@@ -27,6 +30,10 @@ public class Main extends Application {
 
         primaryStage.setScene(new Scene(root, 800, 600));
         primaryStage.show();
+
+        resourceDB.init();
+
+        load(new TestClass());
     }
 
     public static void main(String[] args) {
@@ -43,10 +50,10 @@ public class Main extends Application {
         newBtn.setOnAction(event -> System.out.println("New!"));
 
         final Button saveBtn = new Button("Save");
-        newBtn.setOnAction(event -> System.out.println("Save!"));
+        saveBtn.setOnAction(event -> System.out.println("Save!"));
 
         final Button openBtn = new Button("Open");
-        newBtn.setOnAction(event -> System.out.println("open!"));
+        openBtn.setOnAction(event -> System.out.println("open!"));
         pane.getChildren().addAll(newBtn, openBtn, saveBtn);
 
         return pane;
@@ -54,9 +61,28 @@ public class Main extends Application {
 
     private GridPane buildMain() {
         final GridPane grid = new GridPane();
-
-
         return grid;
+    }
+
+    private VBox instantiateElementContainer(final String _name) {
+        final VBox box = new VBox();
+        box.getChildren().addAll(new Label(_name));
+        return box;
+    }
+
+    private void load(final Object _obj) {
+        final BeanDescription description = resourceDB.loadDescription(_obj.getClass());
+        if (description == null) {
+            return;
+        }
+
+        for (BeanPropertyDefinition property : description.findProperties()) {
+            final DataRenderer renderer = resourceDB.findRendererFor(property);
+            if (renderer == null) {
+                Logging.log("Unable to find renderer for property: " + property);
+            }
+        }
+
     }
 
 }
