@@ -3,10 +3,15 @@ package org.botanick.jvis;
 import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanDescription;
@@ -61,12 +66,20 @@ public class Main extends Application {
 
     private GridPane buildMain() {
         final GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setGridLinesVisible(true);
         return grid;
     }
 
-    private VBox instantiateElementContainer(final String _name) {
+    private VBox createElementContainer(final String _name, int col, int row) {
         final VBox box = new VBox();
-        box.getChildren().addAll(new Label(_name));
+        box.setStyle("-fx-background-color: #AA6666;");
+
+        final Label label = new Label(_name);
+        label.setFont(Font.font(label.getFont().getFamily(), FontWeight.BOLD, FontPosture.ITALIC, 15));
+
+        box.getChildren().addAll(label, new Separator(Orientation.HORIZONTAL));
+        mainPane.add(box, col, row);
         return box;
     }
 
@@ -76,13 +89,17 @@ public class Main extends Application {
             return;
         }
 
+        final VBox container = createElementContainer(_obj.getClass().getSimpleName(), 0, 0);
+
         for (BeanPropertyDefinition property : description.findProperties()) {
             final DataRenderer renderer = resourceDB.findRendererFor(property);
             if (renderer == null) {
                 Logging.log("Unable to find renderer for property: " + property);
+                continue;
             }
-        }
 
+            renderer.render(property, container);
+        }
     }
 
 }

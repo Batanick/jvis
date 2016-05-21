@@ -1,5 +1,8 @@
 package org.botanick.jvis;
 
+import javafx.scene.layout.VBox;
+import org.codehaus.jackson.map.BeanPropertyDefinition;
+
 import java.lang.reflect.Type;
 
 /**
@@ -7,5 +10,5 @@ import java.lang.reflect.Type;
  */
 public interface DataRenderer {
     boolean applicable(Type _type);
-    void render();
+    void render(BeanPropertyDefinition property, VBox container);
 }
