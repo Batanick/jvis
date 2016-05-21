@@ -1,6 +1,5 @@
 package org.botanick.jvis;
 
-import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -16,6 +15,8 @@ import javafx.stage.Stage;
 import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
+
+import java.io.File;
 
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
@@ -33,7 +34,10 @@ public class Main extends Application {
         mainPane = buildMain();
         root.setCenter(mainPane);
 
-        primaryStage.setScene(new Scene(root, 800, 600));
+        final Scene scene = new Scene(root, 800, 600);
+        primaryStage.setScene(scene);
+        scene.getStylesheets().addAll("/org/botanick/jvis/styles.css");
+
         primaryStage.show();
 
         resourceDB.init();
