@@ -55,15 +55,13 @@ public class Main extends Application {
         resourceDB.init();
 
         load(new TestClass());
-
-
     }
 
     private void load(Object instance) {
         drawLines.clear();
         mainPane.getChildren().clear();
 
-        load(new TestSubElement(), 0, 0);
+        load(instance, 0, 0);
 
         stage.setScene(null);
         stage.setScene(scene);
@@ -111,7 +109,10 @@ public class Main extends Application {
 
     private VBox createElementContainer(final String _name) {
         final VBox box = new VBox();
-        box.setStyle("-fx-background-color: #AA6666;");
+        box.setPadding(new Insets(3, 3, 3, 3));
+        box.setStyle("-fx-border-radius: 10 10 10 10;"
+                + "-fx-background-color: #AA6666;"
+                + "-fx-background-radius: 10 10 10 10;");
 
         final Label label = new Label(_name);
         label.setFont(Font.font(label.getFont().getFamily(), FontWeight.BOLD, FontPosture.ITALIC, 15));
@@ -181,7 +182,8 @@ public class Main extends Application {
         finishBounds = finish.localToScene(finishBounds);
         finishBounds = mainPane.sceneToLocal(finishBounds);
 
-        final Line line = new Line(startBounds.getMaxX(), startBounds.getMinY() + startBounds.getHeight()  / 2,
+        final Line line = new Line(startBounds.getMinX() + start.getParent().getBoundsInLocal().getWidth(),
+                startBounds.getMinY() + startBounds.getHeight() / 2,
                 finishBounds.getMinX(), finishBounds.getMinY() + finishBounds.getHeight() / 2);
         line.setManaged(false);
         mainPane.getChildren().add(line);
