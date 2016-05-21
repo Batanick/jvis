@@ -6,6 +6,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
+import org.botanick.jvis.Logging;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.introspect.AnnotatedMember;
 
@@ -74,5 +75,18 @@ public class RenderUtils {
         throw new RuntimeException("Unknown accessor type:" + accessor.getClass().getName() + ", prop:" + propertyDefinition.getName());
     }
 
+    public static boolean setDefaultValue(Object instance, BeanPropertyDefinition property, boolean defaultNull) {
+        final AnnotatedMember mutator = property.getMutator();
+        mutator.fixAccess();
+        final Class<?> clazz = property.getField().getRawType();
+        try {
+            final Object valueInstance = defaultNull ? null : clazz.newInstance();
+            mutator.setValue(instance, valueInstance);
+        } catch (InstantiationException | IllegalAccessException e) {
+            Logging.log(e.getMessage());
+            return false;
+        }
 
+        return true;
+    }
 }

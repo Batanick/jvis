@@ -5,7 +5,7 @@ package org.botanick.jvis;
  */
 public class TestSubElement {
     private TestElement testElement = new TestElement();
-    private TestElement testElement2 = new TestElement();
+    private TestElement testElement2 = null;
     private TestElement testElement3 = new TestElement();
     private TestElement testElement4 = new TestElement();
     private TestElement testElement5 = new TestElement();

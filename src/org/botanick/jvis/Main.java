@@ -34,19 +34,23 @@ public class Main extends Application {
     private Scene scene;
     private Stage stage;
 
+    private Object loaded = null;
+
     private List<Pair<Node, Node>> drawLines = new ArrayList<>();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         stage = primaryStage;
         primaryStage.setTitle(NAME);
+        primaryStage.setResizable(true);
+        primaryStage.setMaximized(true);
 
         final BorderPane root = new BorderPane();
         root.setTop(buildControlls());
         mainPane = buildMain();
         root.setCenter(new ScrollPane(mainPane));
 
-        scene = new Scene(root, 800, 600);
+        scene = new Scene(root);
         primaryStage.setScene(scene);
         scene.getStylesheets().addAll("/org/botanick/jvis/styles.css");
 
@@ -57,7 +61,17 @@ public class Main extends Application {
         load(new TestClass());
     }
 
+    private void reload() {
+        if (loaded == null) {
+            return;
+        }
+
+        load(loaded);
+    }
+
     private void load(Object instance) {
+        loaded = instance;
+
         drawLines.clear();
         mainPane.getChildren().clear();
 
@@ -132,26 +146,56 @@ public class Main extends Application {
 
         int childrenCount = 0;
         for (BeanPropertyDefinition property : description.findProperties()) {
-            final DataRenderer renderer = resourceDB.findRendererFor(property);
-            if (renderer != null) {
-                renderer.render(_obj, property, container);
-                continue;
-            }
-
-            final Label label = RenderUtils.label(property.getName());
-            container.getChildren().add(label);
-            final Pair<Node, Integer> loadResult = load(RenderUtils.extractValue(_obj, property), col + 1, row + childrenCount);
-            if (loadResult == null) {
-                continue;
-            }
-            childrenCount += loadResult.getValue();
-            drawLines.add(new Pair<>(label, loadResult.getKey()));
+            childrenCount = loadField(_obj, col, row, container, childrenCount, property);
         }
 
         mainPane.add(container, col, row, 1, Math.max(1, childrenCount));
         GridPane.setValignment(container, VPos.TOP);
 
         return new Pair<>(container, Math.max(1, childrenCount));
+    }
+
+    private int loadField(Object _obj, int col, int row, VBox container, int childrenCount, BeanPropertyDefinition property) {
+        final DataRenderer renderer = resourceDB.findRendererFor(property);
+        if (renderer != null) {
+            renderer.render(_obj, property, container);
+            return childrenCount;
+        }
+
+        final Object value = RenderUtils.extractValue(_obj, property);
+
+        // loading as object
+        final HBox hBox = new HBox();
+        hBox.getChildren().add(RenderUtils.label(property.getName()));
+
+        final Button btn = new Button();
+        if (value == null) {
+            btn.setText("+");
+            btn.setOnAction(event -> {
+                if (RenderUtils.setDefaultValue(_obj, property, false)) {
+                    reload();
+                }
+            });
+        } else {
+            btn.setText("x");
+            btn.setOnAction(event -> {
+                if (RenderUtils.setDefaultValue(_obj, property, true)) {
+                    reload();
+                }
+            });
+
+            final Pair<Node, Integer> loadResult = load(value, col + 1, row + childrenCount);
+            if (loadResult == null) {
+                return childrenCount;
+            }
+
+            childrenCount += loadResult.getValue();
+            drawLines.add(new Pair<>(hBox, loadResult.getKey()));
+        }
+        hBox.getChildren().add(btn);
+        container.getChildren().add(hBox);
+
+        return childrenCount;
     }
 
     private void loadCollection(BeanPropertyDefinition property, Object obj, int parentCol, int parentRow) {
