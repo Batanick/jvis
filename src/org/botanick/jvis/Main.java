@@ -4,7 +4,6 @@ import javafx.application.Application;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -15,13 +14,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 import org.botanick.jvis.renderers.RenderUtils;
 import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
@@ -30,9 +32,13 @@ public class Main extends Application {
 
     private GridPane mainPane;
     private Scene scene;
+    private Stage stage;
+
+    private List<Pair<Node, Node>> drawLines = new ArrayList<>();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        stage = primaryStage;
         primaryStage.setTitle(NAME);
 
         final BorderPane root = new BorderPane();
@@ -48,7 +54,23 @@ public class Main extends Application {
 
         resourceDB.init();
 
-        load(new TestClass(), 0, 0);
+        load(new TestClass());
+
+
+    }
+
+    private void load(Object instance) {
+        drawLines.clear();
+        mainPane.getChildren().clear();
+
+        load(new TestSubElement(), 0, 0);
+
+        stage.setScene(null);
+        stage.setScene(scene);
+
+        for (Pair<Node, Node> drawLine : drawLines) {
+            drawLine(drawLine.getKey(), drawLine.getValue());
+        }
     }
 
     public static void main(String[] args) {
@@ -62,10 +84,12 @@ public class Main extends Application {
         pane.setStyle("-fx-background-color: #336699;");
 
         final Button newBtn = new Button("New");
-        newBtn.setOnAction(event -> System.out.println("New!"));
+        newBtn.setOnAction(event -> load(new TestClass()));
 
         final Button saveBtn = new Button("Save");
-        saveBtn.setOnAction(event -> System.out.println("Save!"));
+        saveBtn.setOnAction(event -> {
+
+        });
 
         final Button openBtn = new Button("Open");
         openBtn.setOnAction(event -> System.out.println("open!"));
@@ -97,15 +121,15 @@ public class Main extends Application {
         return box;
     }
 
-    private int load(final Object _obj, int col, int row) {
+    private Pair<Node, Integer> load(final Object _obj, int col, int row) {
         final BeanDescription description = resourceDB.loadDescription(_obj.getClass());
         if (description == null) {
-            return 0;
+            return null;
         }
 
         final VBox container = createElementContainer(_obj.getClass().getSimpleName());
 
-        int childsRendered = 0;
+        int childrenCount = 0;
         for (BeanPropertyDefinition property : description.findProperties()) {
             final DataRenderer renderer = resourceDB.findRendererFor(property);
             if (renderer != null) {
@@ -115,14 +139,18 @@ public class Main extends Application {
 
             final Label label = RenderUtils.label(property.getName());
             container.getChildren().add(label);
-            childsRendered += load(RenderUtils.extractValue(_obj, property), col + 1, row + childsRendered);
-            drawArrow(label, col + 1, row + childsRendered);
+            final Pair<Node, Integer> loadResult = load(RenderUtils.extractValue(_obj, property), col + 1, row + childrenCount);
+            if (loadResult == null) {
+                continue;
+            }
+            childrenCount += loadResult.getValue();
+            drawLines.add(new Pair<>(label, loadResult.getKey()));
         }
 
-        mainPane.add(container, col, row, 1, Math.max(1, childsRendered));
+        mainPane.add(container, col, row, 1, Math.max(1, childrenCount));
         GridPane.setValignment(container, VPos.TOP);
 
-        return Math.max(1, childsRendered);
+        return new Pair<>(container, Math.max(1, childrenCount));
     }
 
     private void loadCollection(BeanPropertyDefinition property, Object obj, int parentCol, int parentRow) {
@@ -144,9 +172,19 @@ public class Main extends Application {
         return clazz.isArray() || clazz.isAssignableFrom(Collection.class);
     }
 
-    private void drawArrow(Node node, int col, int row) {
+    private void drawLine(Node start, Node finish) {
+        Bounds startBounds = start.getBoundsInLocal();
+        startBounds = start.localToScene(startBounds);
+        startBounds = mainPane.sceneToLocal(startBounds);
 
+        Bounds finishBounds = finish.getBoundsInLocal();
+        finishBounds = finish.localToScene(finishBounds);
+        finishBounds = mainPane.sceneToLocal(finishBounds);
+
+        final Line line = new Line(startBounds.getMaxX(), startBounds.getMinY() + startBounds.getHeight()  / 2,
+                finishBounds.getMinX(), finishBounds.getMinY() + finishBounds.getHeight() / 2);
+        line.setManaged(false);
+        mainPane.getChildren().add(line);
     }
-
 
 }
