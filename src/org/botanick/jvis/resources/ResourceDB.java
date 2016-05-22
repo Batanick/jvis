@@ -58,6 +58,7 @@ public final class ResourceDB {
         final File config = new File("config");
         if (!config.exists()) {
             try {
+                //noinspection ResultOfMethodCallIgnored
                 config.createNewFile();
             } catch (IOException e) {
                 throw new RuntimeException(e);
