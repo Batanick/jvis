@@ -27,10 +27,9 @@ import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
-import java.lang.reflect.Type;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 public class Main extends Application {
@@ -43,6 +42,7 @@ public class Main extends Application {
     private Stage stage;
 
     private Object loaded = null;
+    private File file = null;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -76,6 +76,14 @@ public class Main extends Application {
         load(loaded);
     }
 
+    private void loadNew() {
+        file = null;
+        loaded = null;
+
+        loaded = RenderUtils.instance((Class) null, resourceDB);
+        reload();
+    }
+
     private void load(Object instance) {
         loaded = instance;
         mainPane.getChildren().clear();
@@ -94,7 +102,7 @@ public class Main extends Application {
         pane.setStyle("-fx-background-color: #336699;");
 
         final Button newBtn = new Button("New");
-        newBtn.setOnAction(event -> load(new TestClass()));
+        newBtn.setOnAction(event -> loadNew());
 
         final Button saveBtn = new Button("Save");
         saveBtn.setOnAction(event -> {
@@ -173,7 +181,7 @@ public class Main extends Application {
             return new Pair<>(0, 0);
         }
 
-        if (isArray(property)) {
+        if (RenderUtils.isArray(property)) {
             return loadArray(property, _obj, container, col, row);
         }
 
@@ -266,12 +274,6 @@ public class Main extends Application {
         }
 
         return new Pair<>(i, childsCount);
-    }
-
-    private boolean isArray(BeanPropertyDefinition propertyDefinition) {
-        final Type type = propertyDefinition.getField().getRawType();
-        final Class clazz = (Class) type;
-        return clazz.isArray() || clazz.isAssignableFrom(Collection.class);
     }
 
     private final class ConnectedLine implements ChangeListener<Transform> {

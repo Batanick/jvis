@@ -13,10 +13,7 @@ import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.introspect.AnnotatedMember;
 
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Bot_A_Nick with love on 5/21/2016.
@@ -107,9 +104,20 @@ public class RenderUtils {
         return list.toArray(o);
     }
 
+
+    public static boolean isArray(BeanPropertyDefinition propertyDefinition) {
+        final Class clazz = propertyDefinition.getField().getRawType();
+        return clazz.isArray() ;
+    }
+
+    public static boolean isCollection(BeanPropertyDefinition property) {
+        final Class clazz = property.getField().getRawType();
+        return Collection.class.isAssignableFrom(clazz);
+    }
+
     public static Object instance(Class clazz, ResourceDB resourceDB) {
-        if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-            final Set<Class> classes = resourceDB.subclassesOf(clazz);
+        if (clazz == null || clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+            final Set<Class> classes = resourceDB.subclassesOf(clazz == null ? Object.class : clazz);
             clazz = demandChoice(classes);
         }
 
