@@ -12,7 +12,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
@@ -27,7 +26,10 @@ import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
@@ -140,25 +142,32 @@ public class Main extends Application {
         final VBox container = createElementContainer(_obj.getClass().getSimpleName());
 
         int childrenCount = 0;
+        int i = 0;
         for (BeanPropertyDefinition property : description.findProperties()) {
-            childrenCount = loadField(_obj, col, row, container, childrenCount, property);
+            final Pair<Integer, Integer> result = loadField(_obj, col, row + childrenCount, container, property);
+            childrenCount += result.getValue();
+            i += result.getKey();
         }
 
+        System.out.println(_obj.getClass().getSimpleName() + ":" + col + ":" + row + ":" + Math.max(1, childrenCount));
         mainPane.add(container, col, row, 1, Math.max(1, childrenCount));
         GridPane.setValignment(container, VPos.TOP);
 
         return new Pair<>(container, Math.max(1, childrenCount));
     }
 
-    private int loadField(Object _obj, int col, int row, VBox container, int childrenCount, BeanPropertyDefinition property) {
+    private Pair<Integer, Integer> loadField(Object _obj, int col, int row, VBox container, BeanPropertyDefinition property) {
         final DataRenderer renderer = resourceDB.findRendererFor(property);
         if (renderer != null) {
             renderer.render(_obj, property, container);
-            return childrenCount;
+            return new Pair<>(0, 0);
+        }
+
+        if (isArray(property)) {
+            return loadArray(property, _obj, container, col, row);
         }
 
         final Object value = RenderUtils.extractValue(_obj, property);
-        property.getField().getDeclaringClass();
 
         // loading as object
         final HBox hBox = new HBox();
@@ -167,6 +176,8 @@ public class Main extends Application {
         hBox.getChildren().add(RenderUtils.label(property.getName()));
 
         final Button btn = new Button();
+        hBox.getChildren().add(btn);
+
         if (value == null) {
             btn.setText("+");
             btn.setOnAction(event -> {
@@ -174,43 +185,73 @@ public class Main extends Application {
                     reload();
                 }
             });
-        } else {
-            btn.setText("x");
-            btn.setOnAction(event -> {
-                if (RenderUtils.setValue(_obj, property, null)) {
-                    reload();
-                }
-            });
-
-            final Pair<Node, Integer> loadResult = load(value, col + 1, row + childrenCount);
-            if (loadResult == null) {
-                return childrenCount;
-            }
-
-            childrenCount += loadResult.getValue();
-
-            new ConnectedLine(hBox, loadResult.getKey());
+            return new Pair<>(0, 0);
         }
-        hBox.getChildren().add(btn);
 
-        return childrenCount;
+        btn.setText("x");
+        btn.setOnAction(event -> {
+            if (RenderUtils.setValue(_obj, property, null)) {
+                reload();
+            }
+        });
+
+        final Pair<Node, Integer> loadResult = load(value, col + 1, row);
+        if (loadResult == null) {
+            return new Pair<>(0, 0);
+        }
+
+        new ConnectedLine(hBox, loadResult.getKey());
+        return new Pair<>(1, loadResult.getValue());
     }
 
-    private void loadCollection(BeanPropertyDefinition property, Object obj, int parentCol, int parentRow) {
-        final Collection collection = (Collection) RenderUtils.extractValue(obj, property);
+    private Pair<Integer, Integer> loadArray(BeanPropertyDefinition property, Object obj, VBox container, int parentCol, int parentRow) {
+        final Class<?> componentType = property.getField().getRawType().getComponentType();
+        Object currentValue = RenderUtils.extractValue(obj, property);
+        if (currentValue == null) {
+            RenderUtils.setValue(obj, property, RenderUtils.instantiateArray(componentType));
+            currentValue = RenderUtils.extractValue(obj, property);
+        }
+
+        final List<Object> values = new ArrayList<>();
+        for (Object element : ((Object[]) currentValue)) {
+            if (element == null) {
+                continue;
+            }
+            values.add(element);
+        }
+
+        final HBox hBox = new HBox();
+        container.getChildren().add(hBox);
+        final Button addElementBtn = new Button("+");
+        addElementBtn.setOnAction(event -> {
+            Object[] current = (Object[]) RenderUtils.extractValue(obj, property);
+            final Object[] newValue = Arrays.copyOf(current, current.length + 1);
+            final Object instance = RenderUtils.instance(componentType, resourceDB);
+            newValue[newValue.length - 1] = instance;
+            RenderUtils.setValue(obj, property, newValue);
+
+            reload();
+        });
+
+        hBox.getChildren().addAll(RenderUtils.label(property.getName()), addElementBtn);
 
         int i = 0;
-        for (Object element : collection) {
-            load(element, parentCol + 1, parentRow + i++);
+        int childsCount = 0;
+        for (Object element : values) {
+            final Pair<Node, Integer> result = load(element, parentCol + 1, parentRow + i++);
+            if (result == null) {
+                continue;
+            }
+
+            childsCount += result.getValue();
+            i++;
         }
+
+        return new Pair<>(i, childsCount);
     }
 
-    private boolean isContainer(BeanPropertyDefinition propertyDefinition) {
-        final Type type = propertyDefinition.getField().getGenericType();
-        if (!(type instanceof Class)) {
-            return false;
-        }
-
+    private boolean isArray(BeanPropertyDefinition propertyDefinition) {
+        final Type type = propertyDefinition.getField().getRawType();
         final Class clazz = (Class) type;
         return clazz.isArray() || clazz.isAssignableFrom(Collection.class);
     }

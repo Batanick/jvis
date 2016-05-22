@@ -12,10 +12,7 @@ import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.introspect.AnnotatedMember;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -89,8 +86,16 @@ public class RenderUtils {
         return true;
     }
 
+    public static Object instantiateArray(Class elementType) {
+        return Array.newInstance(elementType, 0);
+    }
+
     public static Object instance(BeanPropertyDefinition property, ResourceDB resourceDB) {
-        Class<?> clazz = property.getField().getRawType();
+        Class clazz = property.getField().getRawType();
+        return instance(clazz, resourceDB);
+    }
+
+    public static Object instance(Class clazz, ResourceDB resourceDB) {
         if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
             final Set<Class> classes = resourceDB.subclassesOf(clazz);
             clazz = demandChoice(classes);

@@ -38,6 +38,10 @@ public final class ResourceDB {
                 Logging.log(String.format("Unable to instantiate renderer of type:%s, reason:%s", renderer.getName(), e.getMessage()));
             }
         }
+
+        classToImplCache.put(Set.class, Collections.singleton(HashSet.class));
+        classToImplCache.put(Map.class, Collections.singleton(HashMap.class));
+        classToImplCache.put(List.class, Collections.singleton(ArrayList.class));
     }
 
     public BeanDescription loadDescription(final Class _clazz) {

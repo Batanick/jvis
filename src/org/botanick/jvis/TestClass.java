@@ -18,12 +18,15 @@ public class TestClass {
 
 //    private final List<TestElement> children = Arrays.asList(new TestElement(), new TestElement());
 
-    private TestElement element = new TestElement();
+
     private TestSubElement subElement = new TestSubElement();
+    private TestElement element = new TestElement();
     private TestSubElement subElement2 = new TestSubElement();
     private TestElement element2 = new TestElement();
 
     private TestInterface testInterface = null;
+//
+//    private TestElement[] array;
 
     public int publicMorozoff = -32;
 
@@ -69,4 +72,8 @@ public class TestClass {
     public TestInterface getTestInterface() {
         return testInterface;
     }
+//
+//    public TestElement[] getArray() {
+//        return array;
+//    }
 }
