@@ -20,6 +20,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Transform;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 import org.botanick.jvis.renderers.RenderUtils;
@@ -28,6 +29,7 @@ import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +86,45 @@ public class Main extends Application {
         reload();
     }
 
+    private void save() {
+        if (file == null) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save Resource File");
+            file = fileChooser.showSaveDialog(stage);
+        }
+
+        if (file == null) {
+            return;
+        }
+
+        try {
+            resourceDB.getMapper().writerWithDefaultPrettyPrinter().writeValue(file, loaded);
+        } catch (IOException e) {
+            RenderUtils.showError(e.getMessage(), Arrays.toString(e.getStackTrace()));
+        }
+    }
+
+    private void open() {
+        file = null;
+        loaded = null;
+
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        file = fileChooser.showOpenDialog(stage);
+
+        if (file != null) {
+            try {
+                loaded = resourceDB.getMapper().readValue(file, Object.class);
+            } catch (IOException e) {
+                RenderUtils.showError(e.getMessage(), Arrays.toString(e.getStackTrace()));
+                file = null;
+                return;
+            }
+        }
+
+        reload();
+    }
+
     private void load(Object instance) {
         loaded = instance;
         mainPane.getChildren().clear();
@@ -105,12 +146,10 @@ public class Main extends Application {
         newBtn.setOnAction(event -> loadNew());
 
         final Button saveBtn = new Button("Save");
-        saveBtn.setOnAction(event -> {
-
-        });
+        saveBtn.setOnAction(event -> save());
 
         final Button openBtn = new Button("Open");
-        openBtn.setOnAction(event -> System.out.println("open!"));
+        openBtn.setOnAction(event -> open());
         pane.getChildren().addAll(newBtn, openBtn, saveBtn);
 
         return pane;
@@ -324,5 +363,6 @@ public class Main extends Application {
             line.setFill(Color.CORNSILK.deriveColor(0, 1.2, 1, 0.6));
         }
     }
+
 
 }

@@ -1,9 +1,6 @@
 package org.botanick.jvis.renderers;
 
-import javafx.scene.control.ChoiceDialog;
-import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
@@ -166,5 +163,14 @@ public class RenderUtils {
                 }
             }
         return null;
+    }
+
+    public static void showError(final String msg, final String stack) {
+        final Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Kaputt!!!");
+        alert.setHeaderText(msg);
+        alert.setContentText(stack);
+
+        alert.showAndWait();
     }
 }

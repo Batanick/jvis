@@ -2,6 +2,7 @@ package org.botanick.jvis.resources;
 
 import org.botanick.jvis.DataRenderer;
 import org.botanick.jvis.Logging;
+import org.codehaus.jackson.annotate.JsonTypeInfo;
 import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -24,7 +25,7 @@ import java.util.*;
  * Created by Bot_A_Nick with love on 5/18/2016.
  */
 public final class ResourceDB {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private final Map<Class, BeanDescription> classesCache = new HashMap<>();
     private final List<DataRenderer> renderers = new ArrayList<>();
@@ -32,6 +33,8 @@ public final class ResourceDB {
     private Reflections reflections;
 
     public void init() {
+        mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+
         Logging.log("Initializing resourceDB");
 
         reflections = new Reflections(readPackageConfig());
@@ -85,8 +88,8 @@ public final class ResourceDB {
             return description;
         }
 
-        final JavaType javaType = MAPPER.constructType(_clazz);
-        description = MAPPER.getSerializationConfig().introspect(javaType);
+        final JavaType javaType = mapper.constructType(_clazz);
+        description = mapper.getSerializationConfig().introspect(javaType);
         classesCache.put(_clazz, description);
 
         if (description == null) {
@@ -118,5 +121,9 @@ public final class ResourceDB {
 
         classToImplCache.put(clazz, result);
         return result;
+    }
+
+    public ObjectMapper getMapper() {
+        return mapper;
     }
 }
