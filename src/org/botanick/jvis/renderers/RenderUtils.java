@@ -128,6 +128,10 @@ public class RenderUtils {
         }
 
         ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
+        dialog.setContentText("Choose implementation:");
+        dialog.setHeaderText("Implementation");
+        dialog.setHeaderText("Implementation");
+
         final Optional<String> result = dialog.showAndWait();
 
         if (result.isPresent())

@@ -1,6 +1,8 @@
 package org.botanick.jvis;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -9,10 +11,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
+import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 import org.botanick.jvis.renderers.RenderUtils;
@@ -21,9 +27,7 @@ import org.codehaus.jackson.map.BeanDescription;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class Main extends Application {
     private static final String NAME = "JacksonVis";
@@ -36,14 +40,12 @@ public class Main extends Application {
 
     private Object loaded = null;
 
-    private List<Pair<Node, Node>> drawLines = new ArrayList<>();
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         stage = primaryStage;
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
         primaryStage.setTitle(NAME);
-        primaryStage.setResizable(true);
-        primaryStage.setMaximized(true);
 
         final BorderPane root = new BorderPane();
         root.setTop(buildControlls());
@@ -55,6 +57,7 @@ public class Main extends Application {
         scene.getStylesheets().addAll("/org/botanick/jvis/styles.css");
 
         primaryStage.show();
+        primaryStage.setMaximized(true);
 
         resourceDB.init();
 
@@ -71,18 +74,9 @@ public class Main extends Application {
 
     private void load(Object instance) {
         loaded = instance;
-
-        drawLines.clear();
         mainPane.getChildren().clear();
 
         load(instance, 0, 0);
-
-        stage.setScene(null);
-        stage.setScene(scene);
-
-        for (Pair<Node, Node> drawLine : drawLines) {
-            drawLine(drawLine.getKey(), drawLine.getValue());
-        }
     }
 
     public static void main(String[] args) {
@@ -116,6 +110,7 @@ public class Main extends Application {
         grid.setHgap(80);
         grid.setVgap(30);
         grid.setAlignment(Pos.TOP_LEFT);
+        grid.setMinSize(1024, 768);
 
         grid.setGridLinesVisible(false);
         return grid;
@@ -167,6 +162,8 @@ public class Main extends Application {
 
         // loading as object
         final HBox hBox = new HBox();
+        container.getChildren().add(hBox);
+
         hBox.getChildren().add(RenderUtils.label(property.getName()));
 
         final Button btn = new Button();
@@ -191,10 +188,10 @@ public class Main extends Application {
             }
 
             childrenCount += loadResult.getValue();
-            drawLines.add(new Pair<>(hBox, loadResult.getKey()));
+
+            new ConnectedLine(hBox, loadResult.getKey());
         }
         hBox.getChildren().add(btn);
-        container.getChildren().add(hBox);
 
         return childrenCount;
     }
@@ -218,20 +215,49 @@ public class Main extends Application {
         return clazz.isArray() || clazz.isAssignableFrom(Collection.class);
     }
 
-    private void drawLine(Node start, Node finish) {
-        Bounds startBounds = start.getBoundsInLocal();
-        startBounds = start.localToScene(startBounds);
-        startBounds = mainPane.sceneToLocal(startBounds);
+    private final class ConnectedLine implements ChangeListener<Transform> {
+        private final Node start;
+        private final Node finish;
+        private final Line line;
 
-        Bounds finishBounds = finish.getBoundsInLocal();
-        finishBounds = finish.localToScene(finishBounds);
-        finishBounds = mainPane.sceneToLocal(finishBounds);
+        public ConnectedLine(Node start, Node finish) {
+            this.start = start;
+            this.finish = finish;
 
-        final Line line = new Line(startBounds.getMinX() + start.getParent().getBoundsInLocal().getWidth(),
-                startBounds.getMinY() + startBounds.getHeight() / 2,
-                finishBounds.getMinX(), finishBounds.getMinY() + finishBounds.getHeight() / 2);
-        line.setManaged(false);
-        mainPane.getChildren().add(line);
+            line = new Line();
+            line.setManaged(false);
+            mainPane.getChildren().add(line);
+            refresh();
+
+            start.localToParentTransformProperty().addListener(this);
+            finish.localToParentTransformProperty().addListener(this);
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Transform> observable, Transform oldValue, Transform newValue) {
+            refresh();
+        }
+
+        private void refresh() {
+            Bounds startBounds = start.getBoundsInLocal();
+            startBounds = start.localToScene(startBounds);
+            startBounds = mainPane.sceneToLocal(startBounds);
+
+            Bounds finishBounds = finish.getBoundsInLocal();
+            finishBounds = finish.localToScene(finishBounds);
+            finishBounds = mainPane.sceneToLocal(finishBounds);
+
+            line.setStartX(startBounds.getMinX() + start.getParent().getBoundsInLocal().getWidth());
+            line.setStartY(startBounds.getMinY() + startBounds.getHeight() / 2);
+
+            line.setEndX(finishBounds.getMinX());
+            line.setEndY(finishBounds.getMinY() + finishBounds.getHeight() / 2);
+
+            line.setStroke(Color.GREY);
+            line.setStrokeWidth(3);
+            line.setStrokeLineCap(StrokeLineCap.ROUND);
+            line.setFill(Color.CORNSILK.deriveColor(0, 1.2, 1, 0.6));
+        }
     }
 
 }
