@@ -3,6 +3,8 @@ package org.botanick.jvis;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -78,7 +80,7 @@ public class Main extends Application {
         loaded = instance;
         mainPane.getChildren().clear();
 
-        load(instance, 0, 0);
+        load(instance, 0, 0, null);
     }
 
     public static void main(String[] args) {
@@ -118,28 +120,36 @@ public class Main extends Application {
         return grid;
     }
 
-    private VBox createElementContainer(final String _name) {
+    private VBox createElementContainer(final String _name, final EventHandler<ActionEvent> customControll) {
         final VBox box = new VBox();
         box.setPadding(new Insets(3, 3, 3, 3));
         box.setStyle("-fx-border-radius: 10 10 10 10;"
                 + "-fx-background-color: #AA6666;"
                 + "-fx-background-radius: 10 10 10 10;");
 
+        final HBox hBox = new HBox();
+        if (customControll != null) {
+            final Button btn = new Button("X");
+            btn.setOnAction(customControll);
+            hBox.getChildren().add(btn);
+        }
+
         final Label label = new Label(_name);
+        hBox.getChildren().add(label);
         label.setFont(Font.font(label.getFont().getFamily(), FontWeight.BOLD, FontPosture.ITALIC, 15));
 
-        box.getChildren().addAll(label, new Separator(Orientation.HORIZONTAL));
+        box.getChildren().addAll(hBox, new Separator(Orientation.HORIZONTAL));
         box.setMaxHeight(10);
         return box;
     }
 
-    private Pair<Node, Integer> load(final Object _obj, int col, int row) {
+    private Pair<Node, Integer> load(final Object _obj, int col, int row, EventHandler<ActionEvent> customControll) {
         final BeanDescription description = resourceDB.loadDescription(_obj.getClass());
         if (description == null) {
             return null;
         }
 
-        final VBox container = createElementContainer(_obj.getClass().getSimpleName());
+        final VBox container = createElementContainer(_obj.getClass().getSimpleName(), customControll);
 
         int childrenCount = 0;
         int i = 0;
@@ -149,7 +159,7 @@ public class Main extends Application {
             i += result.getKey();
         }
 
-        System.out.println(_obj.getClass().getSimpleName() + ":" + col + ":" + row + ":" + Math.max(1, childrenCount));
+//        System.out.println(_obj.getClass().getSimpleName() + ":" + col + ":" + row + ":" + Math.max(1, childrenCount));
         mainPane.add(container, col, row, 1, Math.max(1, childrenCount));
         GridPane.setValignment(container, VPos.TOP);
 
@@ -195,7 +205,7 @@ public class Main extends Application {
             }
         });
 
-        final Pair<Node, Integer> loadResult = load(value, col + 1, row);
+        final Pair<Node, Integer> loadResult = load(value, col + 1, row, null);
         if (loadResult == null) {
             return new Pair<>(0, 0);
         }
@@ -204,7 +214,7 @@ public class Main extends Application {
         return new Pair<>(1, loadResult.getValue());
     }
 
-    private Pair<Integer, Integer> loadArray(BeanPropertyDefinition property, Object obj, VBox container, int parentCol, int parentRow) {
+    private Pair<Integer, Integer> loadArray(BeanPropertyDefinition property, final Object obj, VBox container, int parentCol, int parentRow) {
         final Class<?> componentType = property.getField().getRawType().getComponentType();
         Object currentValue = RenderUtils.extractValue(obj, property);
         if (currentValue == null) {
@@ -237,12 +247,20 @@ public class Main extends Application {
 
         int i = 0;
         int childsCount = 0;
-        for (Object element : values) {
-            final Pair<Node, Integer> result = load(element, parentCol + 1, parentRow + i++);
+        for (final Object element : values) {
+            final Pair<Node, Integer> result = load(element, parentCol + 1, parentRow + i,
+                    event -> {
+                        Object[] current = (Object[]) RenderUtils.extractValue(obj, property);
+                        RenderUtils.setValue(obj, property, RenderUtils.removeElement(current, element));
+                        reload();
+                    });
+
             if (result == null) {
                 continue;
             }
 
+
+            new ConnectedLine(hBox, result.getKey());
             childsCount += result.getValue();
             i++;
         }
@@ -280,6 +298,10 @@ public class Main extends Application {
         }
 
         private void refresh() {
+            if (start.getParent() == null || finish.getParent() == null) {
+                return;
+            }
+
             Bounds startBounds = start.getBoundsInLocal();
             startBounds = start.localToScene(startBounds);
             startBounds = mainPane.sceneToLocal(startBounds);
@@ -289,10 +311,10 @@ public class Main extends Application {
             finishBounds = mainPane.sceneToLocal(finishBounds);
 
             line.setStartX(startBounds.getMinX() + start.getParent().getBoundsInLocal().getWidth());
-            line.setStartY(startBounds.getMinY() + startBounds.getHeight() / 2);
+            line.setStartY(startBounds.getMinY() + startBounds.getHeight() / 2 + 2);
 
             line.setEndX(finishBounds.getMinX());
-            line.setEndY(finishBounds.getMinY() + finishBounds.getHeight() / 2);
+            line.setEndY(finishBounds.getMinY() + finishBounds.getHeight() / 2 + 2);
 
             line.setStroke(Color.GREY);
             line.setStrokeWidth(3);

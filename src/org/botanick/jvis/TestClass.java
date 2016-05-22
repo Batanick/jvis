@@ -25,8 +25,8 @@ public class TestClass {
     private TestElement element2 = new TestElement();
 
     private TestInterface testInterface = null;
-//
-//    private TestElement[] array;
+
+    private TestElement[] array;
 
     public int publicMorozoff = -32;
 
@@ -73,7 +73,7 @@ public class TestClass {
         return testInterface;
     }
 //
-//    public TestElement[] getArray() {
-//        return array;
-//    }
+    public TestElement[] getArray() {
+        return array;
+    }
 }

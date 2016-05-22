@@ -95,6 +95,18 @@ public class RenderUtils {
         return instance(clazz, resourceDB);
     }
 
+    public static Object[] removeElement(Object[] array, Object element) {
+        final List<Object> list = new ArrayList<>(array.length);
+        for (Object o : array) {
+            if (o != element) {
+                list.add(o);
+            }
+        }
+
+        final Object[] o = (Object[]) Array.newInstance(element.getClass(), list.size());
+        return list.toArray(o);
+    }
+
     public static Object instance(Class clazz, ResourceDB resourceDB) {
         if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
             final Set<Class> classes = resourceDB.subclassesOf(clazz);
