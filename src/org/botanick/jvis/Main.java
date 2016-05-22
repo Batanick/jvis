@@ -163,6 +163,7 @@ public class Main extends Application {
         }
 
         final Object value = RenderUtils.extractValue(_obj, property);
+        property.getField().getDeclaringClass();
 
         // loading as object
         final HBox hBox = new HBox();
@@ -172,14 +173,14 @@ public class Main extends Application {
         if (value == null) {
             btn.setText("+");
             btn.setOnAction(event -> {
-                if (RenderUtils.setDefaultValue(_obj, property, false)) {
+                if (RenderUtils.setValue(_obj, property, RenderUtils.instance(property, resourceDB))) {
                     reload();
                 }
             });
         } else {
             btn.setText("x");
             btn.setOnAction(event -> {
-                if (RenderUtils.setDefaultValue(_obj, property, true)) {
+                if (RenderUtils.setValue(_obj, property, null)) {
                     reload();
                 }
             });

@@ -23,6 +23,8 @@ public class TestClass {
     private TestSubElement subElement2 = new TestSubElement();
     private TestElement element2 = new TestElement();
 
+    private TestInterface testInterface = null;
+
     public int publicMorozoff = -32;
 
     @JsonIgnore
@@ -62,5 +64,9 @@ public class TestClass {
 
     public TestSubElement getSubElement2() {
         return subElement2;
+    }
+
+    public TestInterface getTestInterface() {
+        return testInterface;
     }
 }

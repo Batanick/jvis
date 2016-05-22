@@ -1,5 +1,6 @@
 package org.botanick.jvis.renderers;
 
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -7,12 +8,18 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import org.botanick.jvis.Logging;
+import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.introspect.AnnotatedMember;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Created by Bot_A_Nick with love on 5/21/2016.
@@ -75,18 +82,60 @@ public class RenderUtils {
         throw new RuntimeException("Unknown accessor type:" + accessor.getClass().getName() + ", prop:" + propertyDefinition.getName());
     }
 
-    public static boolean setDefaultValue(Object instance, BeanPropertyDefinition property, boolean defaultNull) {
+    public static boolean setValue(Object instance, BeanPropertyDefinition property, Object value) {
         final AnnotatedMember mutator = property.getMutator();
         mutator.fixAccess();
-        final Class<?> clazz = property.getField().getRawType();
-        try {
-            final Object valueInstance = defaultNull ? null : clazz.newInstance();
-            mutator.setValue(instance, valueInstance);
-        } catch (InstantiationException | IllegalAccessException e) {
-            Logging.log(e.getMessage());
-            return false;
+        mutator.setValue(instance, value);
+        return true;
+    }
+
+    public static Object instance(BeanPropertyDefinition property, ResourceDB resourceDB) {
+        Class<?> clazz = property.getField().getRawType();
+        if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+            final Set<Class> classes = resourceDB.subclassesOf(clazz);
+            clazz = demandChoice(classes);
         }
 
-        return true;
+        if (clazz == null) {
+            return null;
+        }
+
+        try {
+            return clazz.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            Logging.log("Unable to instantiate isntance of class:" + clazz.getName());
+        }
+
+        return null;
+    }
+
+
+    public static Class demandChoice(Set<Class> cases) {
+        if (cases.isEmpty()) {
+            return null;
+        }
+
+        final List<String> choices = new ArrayList<>();
+        for (Class cse : cases) {
+            if (cse.isInterface() || Modifier.isAbstract(cse.getModifiers())) {
+                continue;
+            }
+            choices.add(cse.getName());
+        }
+
+        if (choices.isEmpty()) {
+            return null;
+        }
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
+        final Optional<String> result = dialog.showAndWait();
+
+        if (result.isPresent())
+            for (Class aCase : cases) {
+                if (aCase.getName().equals(result.get())) {
+                    return aCase;
+                }
+            }
+        return null;
     }
 }

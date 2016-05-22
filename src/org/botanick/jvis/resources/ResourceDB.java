@@ -7,6 +7,8 @@ import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
 import org.reflections.Reflections;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -20,6 +22,7 @@ public final class ResourceDB {
 
     private final Map<Class, BeanDescription> classesCache = new HashMap<>();
     private final List<DataRenderer> renderers = new ArrayList<>();
+    private final Map<Class, Set<Class>> classToImplCache = new HashMap<>();
 
     public void init() {
         Logging.log("Initializing resourceDB");
@@ -61,5 +64,18 @@ public final class ResourceDB {
         }
 
         return null;
+    }
+
+    public Set<Class> subclassesOf(Class clazz) {
+        Set<Class> result = classToImplCache.get(clazz);
+        if (result != null) {
+            return result;
+        }
+
+        final Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forJavaClassPath()));
+        //noinspection unchecked
+        result = reflections.getSubTypesOf(clazz);
+        classToImplCache.put(clazz, result);
+        return result;
     }
 }
