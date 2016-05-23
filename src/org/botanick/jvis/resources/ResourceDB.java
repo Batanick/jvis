@@ -69,6 +69,7 @@ public final class ResourceDB {
         try (BufferedReader br = new BufferedReader(new FileReader(config))) {
             String line;
             while ((line = br.readLine()) != null) {
+                Logging.log("Loading package:" + line);
                 urls.addAll(ClasspathHelper.forPackage(line));
                 // process the line.
             }
@@ -114,8 +115,6 @@ public final class ResourceDB {
         if (result != null) {
             return result;
         }
-
-        final ConfigurationBuilder builder = new ConfigurationBuilder();
 
         //noinspection unchecked
         result = reflections.getSubTypesOf(clazz);

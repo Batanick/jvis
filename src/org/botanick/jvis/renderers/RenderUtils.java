@@ -1,6 +1,22 @@
 package org.botanick.jvis.renderers;
 
-import javafx.scene.control.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
@@ -8,9 +24,6 @@ import org.botanick.jvis.Logging;
 import org.botanick.jvis.resources.ResourceDB;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.introspect.AnnotatedMember;
-
-import java.lang.reflect.*;
-import java.util.*;
 
 /**
  * Created by Bot_A_Nick with love on 5/21/2016.
@@ -46,7 +59,10 @@ public class RenderUtils {
                     }
                 }
         );
-        field.setText(extractValue(instance, propertyDefinition).toString());
+        final Object current = extractValue(instance, propertyDefinition);
+        if (current != null) {
+            field.setText(current.toString());
+        }
         field.setFont(Font.font(field.getFont().getFamily(), 12));
 
         return field;
@@ -104,7 +120,7 @@ public class RenderUtils {
 
     public static boolean isArray(BeanPropertyDefinition propertyDefinition) {
         final Class clazz = propertyDefinition.getField().getRawType();
-        return clazz.isArray() ;
+        return clazz.isArray();
     }
 
     public static boolean isCollection(BeanPropertyDefinition property) {
@@ -144,6 +160,7 @@ public class RenderUtils {
             }
             choices.add(cse.getName());
         }
+        Collections.sort(choices);
 
         if (choices.isEmpty()) {
             return null;
