@@ -199,25 +199,22 @@ public class Main extends Application {
         final VBox container = createElementContainer(_obj.getClass().getSimpleName(), customControll);
 
         int childrenCount = 0;
-        int i = 0;
         for (BeanPropertyDefinition property : description.findProperties()) {
-            final Pair<Integer, Integer> result = loadField(_obj, col, row + childrenCount, container, property);
-            childrenCount += result.getValue();
-            i += result.getKey();
+            childrenCount += loadField(_obj, col, row + childrenCount, container, property);
         }
 
-//        System.out.println(_obj.getClass().getSimpleName() + ":" + col + ":" + row + ":" + Math.max(1, childrenCount));
+        System.out.println(_obj.getClass().getSimpleName() + ":" + col + ":" + row + ":" + Math.max(1, childrenCount));
         mainPane.add(container, col, row, 1, Math.max(1, childrenCount));
         GridPane.setValignment(container, VPos.TOP);
 
         return new Pair<>(container, Math.max(1, childrenCount));
     }
 
-    private Pair<Integer, Integer> loadField(Object _obj, int col, int row, VBox container, BeanPropertyDefinition property) {
+    private int loadField(Object _obj, int col, int row, VBox container, BeanPropertyDefinition property) {
         final DataRenderer renderer = resourceDB.findRendererFor(property);
         if (renderer != null) {
             renderer.render(_obj, property, container);
-            return new Pair<>(0, 0);
+            return 0;
         }
 
         if (RenderUtils.isArray(property)) {
@@ -242,7 +239,7 @@ public class Main extends Application {
                     reload();
                 }
             });
-            return new Pair<>(0, 0);
+            return 0;
         }
 
         btn.setText("x");
@@ -254,14 +251,14 @@ public class Main extends Application {
 
         final Pair<Node, Integer> loadResult = load(value, col + 1, row, null);
         if (loadResult == null) {
-            return new Pair<>(0, 0);
+            return 0;
         }
 
         new ConnectedLine(hBox, loadResult.getKey());
-        return new Pair<>(1, loadResult.getValue());
+        return loadResult.getValue();
     }
 
-    private Pair<Integer, Integer> loadArray(BeanPropertyDefinition property, final Object obj, VBox container, int parentCol, int parentRow) {
+    private int loadArray(BeanPropertyDefinition property, final Object obj, VBox container, int parentCol, int parentRow) {
         final Class<?> componentType = property.getField().getRawType().getComponentType();
         Object currentValue = RenderUtils.extractValue(obj, property);
         if (currentValue == null) {
@@ -295,7 +292,7 @@ public class Main extends Application {
         int i = 0;
         int childsCount = 0;
         for (final Object element : values) {
-            final Pair<Node, Integer> result = load(element, parentCol + 1, parentRow + i,
+            final Pair<Node, Integer> result = load(element, parentCol + 1, parentRow + childsCount,
                     event -> {
                         Object[] current = (Object[]) RenderUtils.extractValue(obj, property);
                         RenderUtils.setValue(obj, property, RenderUtils.removeElement(current, element));
@@ -312,7 +309,7 @@ public class Main extends Application {
             i++;
         }
 
-        return new Pair<>(i, childsCount);
+        return Math.max(i, childsCount);
     }
 
     private final class ConnectedLine implements ChangeListener<Transform> {
